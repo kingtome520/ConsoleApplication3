@@ -30,6 +30,12 @@ void initGrid();
 void placeBombs(int firstClickX, int firstClickY);
 
 void change(int x, int y);
+
+void Mmark(int x, int y);
+
+bool checkWin();
+
+
 #endif // !_INTERFACE_H_
 
 

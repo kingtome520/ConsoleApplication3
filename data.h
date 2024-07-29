@@ -21,6 +21,10 @@
 //背景图片2
 #define PATH_BACKGROUND_2 ".\\image\\background_2.png"
 
+//游戏胜利与失败
+#define PATH_GAMEWIN ".\\image\\gamewin.png"
+#define PATH_GAMEOVER ".\\image\\gameover.png"
+
 //开始与结束按钮
 #define PATH_START ".\\image\\start.png"
 #define PATH_END ".\\image\\end.png"
@@ -78,11 +82,13 @@
 #define GRID_SIZE 9
 #define NUM_BOMBS 10
 
-typedef struct {
+typedef struct cell
+{
 	bool isBomb ;
 	bool isRevealed;
 	int nbomb;
 	int change;
+	int Mark;
 } Cell;
 
 Cell grid[GRID_SIZE][GRID_SIZE];
@@ -98,5 +104,10 @@ typedef struct picture
 } Picture;
 
 
+typedef enum gameState{
+	GAME_RUNNING,
+	GAME_WON,
+	GAME_LOST
+} GameState;
 
 #endif //_DATA_H_

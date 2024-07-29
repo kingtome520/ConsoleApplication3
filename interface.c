@@ -17,10 +17,18 @@ Picture g_picBlank_7;
 Picture g_picBlank_8;
 Picture g_picBlank_9;
 Picture g_picBomb;
+Picture g_picsign_tag;
+Picture g_picsign_unknow;
+Picture g_picgamewin;
+Picture g_picgameover;
+
+
 
 bool gameStarted = false;
 bool firstClick = true;
 bool place = false;
+bool gamewin = false;
+bool gameover = false;
 
 //int timerValue = 0; // 计时器变量
 
@@ -196,6 +204,28 @@ int loadPicResources(void)
 		BACKGROUND_PIC1_X, BACKGROUND_PIC1_Y,
 		BACKGROUND_PIC1_W, BACKGROUND_PIC1_H);
 
+	//加载游戏胜利与失败图片
+	g_picgamewin = loadPic(PATH_GAMEWIN);
+	if (g_picgamewin.pPic == NULL)
+	{
+		return -1;
+	}
+	setPicSrcRect(&g_picgamewin, 0, 0, 0, 0);
+	setPicDstRect(&g_picgamewin,
+		BACKGROUND_PIC1_X, BACKGROUND_PIC1_Y,
+		BACKGROUND_PIC1_W, BACKGROUND_PIC1_H);
+
+	g_picgameover = loadPic(PATH_GAMEOVER);
+	if (g_picgameover.pPic == NULL)
+	{
+		return -1;
+	}
+	setPicSrcRect(&g_picgameover, 0, 0, 0, 0);
+	setPicDstRect(&g_picgameover,
+		BACKGROUND_PIC1_X, BACKGROUND_PIC1_Y,
+		BACKGROUND_PIC1_W, BACKGROUND_PIC1_H);
+
+
 	//加载游戏开始按钮图片 
 	g_picStartButton = loadPic(PATH_START);
 	if (g_picStartButton.pPic == NULL) {
@@ -287,6 +317,21 @@ int loadPicResources(void)
 	}
 	setPicSrcRect(&g_picBlank_0, 0, 0, 0, 0);
 
+	//加载标记1
+	g_picsign_tag = loadPic(PATH_SIGN_TAG);
+	if (g_picsign_tag.pPic == NULL)
+	{
+		return -1;
+	}
+	setPicSrcRect(&g_picsign_tag, 0, 0, 0, 0);
+
+	//加载标记2
+	g_picsign_unknow = loadPic(PATH_SIGN_UNKNOW);
+	if (g_picsign_unknow.pPic == NULL)
+	{
+		return -1;
+	}
+	setPicSrcRect(&g_picsign_unknow, 0, 0, 0, 0);
 
 	return 0;
 }
@@ -342,7 +387,7 @@ void paint()
 			{
 				for (int j = 0; j < GRID_SIZE; j++)
 				{
-					if (grid[i][j].isRevealed)
+					if (grid[i][j].change==1&& grid[i][j].Mark==0)
 					{
 						setPicDstRect(&g_picBlank_0, BLANK_X + BLANK_W * j,
 							BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
@@ -389,34 +434,47 @@ void paint()
 							break;
 						}
 					}
-					else if (grid[i][j].isBomb && grid[i][j].change == 1)
+					else if (grid[i][j].isBomb && grid[i][j].change == 1&& grid[i][j].Mark == 0)
 					{
 						setPicDstRect(&g_picBomb, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 						paintPic(&g_picBomb);
 					}
-				
+					else if (grid[i][j].change==0&& grid[i][j].Mark == 0) {
+						setPicDstRect(&g_picBlank_0, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+						paintPic(&g_picBlank_0);
+					}
+					if (grid[i][j].Mark==1)
+					{
+						setPicDstRect(&g_picsign_tag, BLANK_X + BLANK_W * j,
+							BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+						paintPic(&g_picsign_tag);
+					}
+					if (grid[i][j].Mark == 2)
+					{
+						setPicDstRect(&g_picsign_unknow, BLANK_X + BLANK_W * j,
+							BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+						paintPic(&g_picsign_unknow);
+					}
 				}
 			}
 		}
-		for (int i = 0; i < 9; i++)
-		{
-			for (int j = 0; j < 9; i++)
-			{
-				if (!grid[i][j].isRevealed)
-				{
-					setPicDstRect(&g_picBlank_0, BLANK_X + BLANK_W * j,
-						BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
-					paintPic(&g_picBlank_0);
-				}
-			}
-		}
-	
 		
 	}
 	else {
 		paintPic(&g_picBackGround_1);
 		paintPic(&g_picStartButton);
 	}
+	if (gameover)
+	{
+		paintPic(&g_picgameover);
+	}
+	if (gamewin)
+	{
+		paintPic(&g_picgamewin);
+
+	}
+
+
 	SDL_RenderPresent(g_pRenderer);
 
 }
@@ -425,12 +483,13 @@ void paint()
 void change(int x, int y)
 {
 
-	int i = (x - BLANK_Y) / BLANK_H;
-	int j = (y - BLANK_X) / BLANK_W;
+	int i = (y - BLANK_Y) / BLANK_H;
+	int j = (x - BLANK_X) / BLANK_W;
 	printf("%d,%d,%d???\n" ,i+1, j+1, grid[i][j].nbomb);
 	if (i>=0&&i<=8&& j >= 0 && j <= 8)
 	{
-		if (grid[i][j].isRevealed == false && grid[i][j].change == 0 && grid[i][j].isBomb == false)
+		if (((grid[i][j].isRevealed == false) && (grid[i][j].change == 0)) 
+			&& (grid[i][j].isBomb == false))
 		{
 			grid[i][j].change = 1;
 			grid[i][j].isRevealed = true;
@@ -438,53 +497,71 @@ void change(int x, int y)
 			switch (grid[i][j].nbomb)
 			{
 			case 0:
-				printf("%d, %d???\n", i , j );
-				setPicDstRect(&g_picBlank_9, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				printf("     %d, %d???\n", i , j );
+				setPicDstRect(&g_picBlank_9, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_9);
-				change(x + 37, y);
+				/*change(x + 37, y);
 				change(x, y + 37);
-				change(x, y - 37);
+				change(x-37, y);
+				change(x , y-37);*/
+				change(x + 37, y);
+				change(x + 37, y + 37);
+				change(x, y + 37);
+				change(x - 37, y + 37);
 				change(x - 37, y);
+				change(x - 37, y - 37);
+				change(x, y - 37);
+				change(x + 37, y - 37);
 				break;
 			case 1:
 				SDL_RenderClear(g_pRenderer);
-				setPicDstRect(&g_picBlank_1, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_1, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_1);
 				break;
 			case 2:
-				setPicDstRect(&g_picBlank_2, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_2, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_2);
 				break;
 			case 3:
-				setPicDstRect(&g_picBlank_3, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_3, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_3);
 				break;
 			case 4:
-				setPicDstRect(&g_picBlank_4, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_4, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_4);
 				break;
 			case 5:
-				setPicDstRect(&g_picBlank_5, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_5, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_5);
 				break;
 			case 6:
-				setPicDstRect(&g_picBlank_5, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_5, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_6);
 				break;
 			case 7:
-				setPicDstRect(&g_picBlank_7, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_7, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_7);
 				break;
 			case 8:
-				setPicDstRect(&g_picBlank_8, BLANK_X + BLANK_W * j, BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
+				setPicDstRect(&g_picBlank_8, BLANK_X + BLANK_W * j, 
+					BLANK_Y + BLANK_H * i, BLANK_W, BLANK_H);
 				paintPic(&g_picBlank_8);
 				break;
 			default:
 				break;
+				
 			}
 			
 		}
-		else if (grid[i][j].isRevealed == false && grid[i][j].change == 0 && grid[i][j].isBomb == true)
+		else if (((grid[i][j].isRevealed == false) && (grid[i][j].change == 0)) && grid[i][j].isBomb == true)
 		{
 			grid[i][j].change = 1;
 			grid[i][j].isRevealed = true;
@@ -500,26 +577,24 @@ void change(int x, int y)
 
 
 //游戏开始按钮点击
-void handleEvents(bool* quit) 
+void handleEvents(bool* quit)
 {
 	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0) 
+	while (SDL_PollEvent(&e) != 0)
 	{
-		if (e.type == SDL_QUIT) 
+		if (e.type == SDL_QUIT)
 		{
 			*quit = true;
 		}
-		else if (e.type == SDL_MOUSEBUTTONDOWN) 
+		else if (e.type == SDL_MOUSEBUTTONDOWN)
 		{
 			int x, y;
 			SDL_GetMouseState(&x, &y);
 			if (!gameStarted && x >= BOX_START_X && x <= BOX_START_X + BOX_W &&
 				y >= BOX_START_Y && y <= BOX_START_Y + BOX_H)
 			{
-				printf("开始游戏按钮被点击！\n");
 				gameStarted = true;
 				paint();
-				// 在这里添加开始游戏的逻辑
 			}
 			else if (gameStarted)
 			{
@@ -527,32 +602,89 @@ void handleEvents(bool* quit)
 				int gridY = (y - BLANK_Y) / BLANK_H;
 				if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE)
 				{
-					if (firstClick)
+					if (e.button.button == SDL_BUTTON_LEFT)
 					{
-						placeBombs(gridX, gridY);
-						place = true;
-						for (int i = 0; i < 9; i++)
+						if (firstClick)
 						{
-							for (int j = 0; j < 9; j++)
+							initGrid();
+							placeBombs(gridX, gridY);
+							place = true;
+							firstClick = false;
+						}
+						if (!grid[gridY][gridX].isRevealed && grid[gridY][gridX].Mark == 0)
+						{
+							if (grid[gridY][gridX].isBomb)
 							{
-								grid[i][j].change = 0;
+								printf("游戏结束！你点击了一个雷！\n");
+								gameover = true;
+								gameStarted = false;
+								// 显示所有炸弹
+								for (int i = 0; i < GRID_SIZE; i++) {
+									for (int j = 0; j < GRID_SIZE; j++) {
+										if (grid[i][j].isBomb) {
+											grid[i][j].change = 1;
+										}
+									}
+								}
+								paint();
+							}
+							else {
+								change(x, y);
+								if (checkWin())
+								{
+									printf("你赢了！所有雷都被标记了！\n");
+									gameStarted = false;
+									paint();
+								}
 							}
 						}
-						change(x,y);
-						firstClick = false;
 					}
-					else
+					else if (e.button.button == SDL_BUTTON_RIGHT)
 					{
-						change(x, y);
+						Mmark(x, y);
+						if (checkWin())
+						{
+							
+							printf("你赢了！所有雷都被标记了！\n");
+							gamewin = true;
+
+							gameStarted = false;
+							paint();
+						}
 					}
-					grid[gridX][gridY].isRevealed = 0;
-					// 在这里添加点击后的逻辑
 				}
 			}
-
 		}
 	}
 }
+
+
+//右键标记
+void Mmark(int x, int y)
+{
+	int i = (y - BLANK_Y) / BLANK_H;
+	int j = (x - BLANK_X) / BLANK_W;
+	if (i >= 0 && i < GRID_SIZE && j >= 0 && j < GRID_SIZE) {
+		if (!grid[i][j].isRevealed && grid[i][j].change == 0) {
+			grid[i][j].Mark = (grid[i][j].Mark + 1) % 3;
+			paint();
+		}
+	}
+}
+
+//检查胜利条件
+bool checkWin() 
+{
+	for (int i = 0; i < GRID_SIZE; i++) {
+		for (int j = 0; j < GRID_SIZE; j++) {
+			if (grid[i][j].isBomb && grid[i][j].Mark != 1) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 
 //初始化格子
 void initGrid() 
@@ -561,6 +693,8 @@ void initGrid()
 		for (int j = 0; j < GRID_SIZE; ++j) {
 			grid[i][j].isBomb = false;
 			grid[i][j].isRevealed = false;
+			grid[i][j].Mark = 0;
+			grid[i][j].change = 0;
 		}
 	}
 }
@@ -611,40 +745,3 @@ void placeBombs(int firstClickX, int firstClickY) {
 	}
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-//Uint32 timerCallback(Uint32 interval, void* param) {
-//	timerValue++;
-//	return interval;
-//}
-
-
-//void render() {
-	// 显示计时器
-	//char timerText[50];
-	//printf(timerText, "score: %d  timer: %d", 0, timerValue); // 假设score为0
-	//SDL_Surface* textSurface = SDL_CreateRGBSurfaceWithFormat(0, 200, 50, 32, SDL_PIXELFORMAT_RGBA32);
-	//SDL_FillRect(textSurface, NULL, SDL_MapRGB(textSurface->format, 255, 255, 255));
-	//SDL_Color textColor = { 0, 0, 0, 255 };
-	//SDL_Surface* text = TTF_RenderText_Solid(font, timerText, textColor);
-	//SDL_BlitSurface(text, NULL, textSurface, NULL);
-	//SDL_Texture* textTexture = SDL_CreateTextureFromSurface(g_pRenderer, textSurface);
-	//SDL_Rect textRect = { 600, 10, textSurface->w, textSurface->h };
-	//SDL_RenderCopy(g_pRenderer, textTexture, NULL, &textRect);
-
-	//SDL_FreeSurface(text);
-	//SDL_FreeSurface(textSurface);
-	//SDL_DestroyTexture(textTexture);
-
-	//SDL_RenderPresent(g_pRenderer);
-//}
